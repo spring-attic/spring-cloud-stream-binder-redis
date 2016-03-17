@@ -1,0 +1,2 @@
+redis:\
+org.springframework.cloud.stream.binder.redis.config.RedisServiceAutoConfiguration

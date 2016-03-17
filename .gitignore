@@ -1,0 +1,16 @@
+.classpath
+.project
+.settings
+.springBeans
+.apt_generated
+.DS_Store
+bin/
+build/
+target/
+*.sw*
+*.iml
+*.ipr
+*.iws
+.idea/*
+.factorypath
+dump.rdb
