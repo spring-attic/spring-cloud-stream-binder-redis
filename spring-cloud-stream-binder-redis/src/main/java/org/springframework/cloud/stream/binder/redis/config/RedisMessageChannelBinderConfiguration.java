@@ -32,7 +32,7 @@ import org.springframework.integration.codec.Codec;
  */
 @Configuration
 @Import({PropertyPlaceholderAutoConfiguration.class, KryoCodecAutoConfiguration.class})
-@ConfigurationProperties(prefix = "spring.cloud.stream.binder.redis")
+@ConfigurationProperties(prefix = "spring.cloud.stream.redis.binder")
 public class RedisMessageChannelBinderConfiguration {
 
 	private String[] headers;
