@@ -7,7 +7,7 @@
 	<name>spring-cloud-stream-binder-redis</name>
 	<description>Redis binder implementation</description>
 
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+	<version>1.0.0.RC1</version>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-binders-parent</artifactId>
