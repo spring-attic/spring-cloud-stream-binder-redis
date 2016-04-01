@@ -31,6 +31,7 @@ import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinding;
 import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
+import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -79,9 +80,6 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 	private final RedisOperations<String, String> redisOperations;
 
 	private final RedisConnectionFactory connectionFactory;
-
-	private final EmbeddedHeadersMessageConverter embeddedHeadersMessageConverter = new
-			EmbeddedHeadersMessageConverter();
 
 	private final RedisQueueOutboundChannelAdapter errorAdapter;
 
@@ -148,7 +146,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 	}
 
 	private Binding<MessageChannel> doRegisterConsumer(String bindingName, String group, String channelName, MessageChannel moduleInputChannel,
-													   MessageProducerSupport adapter, final ConsumerProperties properties) {
+			MessageProducerSupport adapter, final ConsumerProperties properties) {
 		DirectChannel bridgeToModuleChannel = new DirectChannel();
 		bridgeToModuleChannel.setBeanFactory(this.getBeanFactory());
 		bridgeToModuleChannel.setBeanName(channelName + ".bridge");
@@ -183,7 +181,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 	 * @return The channel, or a wrapper.
 	 */
 	private MessageChannel addRetryIfNeeded(final String name, final DirectChannel bridgeToModuleChannel,
-											ConsumerProperties properties) {
+			ConsumerProperties properties) {
 		final RetryTemplate retryTemplate = buildRetryTemplateIfRetryEnabled(properties);
 		if (retryTemplate == null) {
 			return bridgeToModuleChannel;
@@ -253,7 +251,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 	}
 
 	private Binding<MessageChannel> doRegisterProducer(final String name, MessageChannel moduleOutputChannel,
-													   ProducerProperties properties) {
+			ProducerProperties properties) {
 		Assert.isInstanceOf(SubscribableChannel.class, moduleOutputChannel);
 		MessageHandler handler = new SendingHandler(name, properties);
 		EventDrivenConsumer consumer = new EventDrivenConsumer((SubscribableChannel) moduleOutputChannel, handler);
@@ -329,15 +327,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 		@SuppressWarnings("unchecked")
 		@Override
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			MessageValues theRequestMessage;
-			try {
-				theRequestMessage = embeddedHeadersMessageConverter.extractHeaders((Message<byte[]>) requestMessage, true);
-			}
-			catch (Exception e) {
-				logger.error(EmbeddedHeadersMessageConverter.decodeExceptionMessage(requestMessage), e);
-				theRequestMessage = new MessageValues(requestMessage);
-			}
-			return deserializePayloadIfNecessary(theRequestMessage).toMessage(getMessageBuilderFactory());
+			return extractMessageValues(requestMessage).toMessage(getMessageBuilderFactory());
 		}
 
 		@Override
