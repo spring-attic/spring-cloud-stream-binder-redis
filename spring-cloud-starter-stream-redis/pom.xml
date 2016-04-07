@@ -9,7 +9,7 @@
 	<artifactId>spring-cloud-starter-stream-redis</artifactId>
 	<description>Spring Cloud Starter Stream Redis</description>
 	<url>http://projects.spring.io/spring-cloud</url>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+	<version>1.0.0.RC2</version>
 	<organization>
 		<name>Pivotal Software, Inc.</name>
 		<url>http://www.spring.io</url>
@@ -18,7 +18,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-redis</artifactId>
-			<version>1.0.0.BUILD-SNAPSHOT</version>
+			<version>1.0.0.RC2</version>
 		</dependency>
 	</dependencies>
 	<profiles>
