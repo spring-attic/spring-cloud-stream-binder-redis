@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-stream-starters</artifactId>
-		<version>1.0.0.RC1</version>
+		<version>1.0.0.RC2</version>
 	</parent>
 	<artifactId>spring-cloud-starter-stream-redis</artifactId>
 	<description>Spring Cloud Starter Stream Redis</description>
