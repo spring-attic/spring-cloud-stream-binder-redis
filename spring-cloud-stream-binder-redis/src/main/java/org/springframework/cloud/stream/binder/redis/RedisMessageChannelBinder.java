@@ -30,7 +30,6 @@ import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.DefaultBinding;
-import org.springframework.cloud.stream.binder.EmbeddedHeadersMessageConverter;
 import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.binder.MessageValues;
 import org.springframework.cloud.stream.binder.PartitionHandler;
@@ -39,6 +38,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.http.MediaType;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.endpoint.EventDrivenConsumer;
 import org.springframework.integration.endpoint.MessageProducerSupport;
@@ -49,6 +49,7 @@ import org.springframework.integration.redis.outbound.RedisQueueOutboundChannelA
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.retry.RecoveryCallback;
@@ -162,7 +163,7 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 				RedisMessageChannelBinder.this.redisOperations.boundZSetOps(key).incrementScore(getGroup(), -1);
 			}
 		};
-		ReceivingHandler convertingBridge = new ReceivingHandler();
+		ReceivingHandler convertingBridge = new ReceivingHandler(properties);
 		convertingBridge.setOutputChannel(moduleInputChannel);
 		convertingBridge.setBeanName(channelName + ".bridge.handler");
 		convertingBridge.afterPropertiesSet();
@@ -296,13 +297,32 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 			if (producerProperties.isPartitioned()) {
 				transformed.put(PARTITION_HEADER, this.partitionHandler.determinePartition(message));
 			}
+			byte[] messageToSend = null;
+			if(HeaderMode.embeddedHeaders.equals(producerProperties.getHeaderMode())) {
+				messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
+						RedisMessageChannelBinder.this.headersToMap);
+			}
+			else {
+				Object contentType = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+				if (contentType != null
+						&& !contentType.equals(MediaType.APPLICATION_OCTET_STREAM_VALUE)) {
+					logger.error("Raw mode supports only " + MediaType.APPLICATION_OCTET_STREAM_VALUE + " content type"
+							+ message.getPayload().getClass());
+				}
+				if (message.getPayload() instanceof byte[]) {
+					messageToSend = (byte[]) message.getPayload();
+				}
+				else {
+					logger.error("Raw mode supports only byte[] payloads but value sent was of type "
+							+ message.getPayload().getClass());
+				}
+			}
 
-			byte[] messageToSend = embeddedHeadersMessageConverter.embedHeaders(transformed,
-					RedisMessageChannelBinder.this.headersToMap);
-
-			refreshChannelAdapters();
-			for (RedisQueueOutboundChannelAdapter adapter : adapters.values()) {
-				adapter.handleMessage((MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build()));
+			if (messageToSend != null) {
+				refreshChannelAdapters();
+				for (RedisQueueOutboundChannelAdapter adapter : adapters.values()) {
+					adapter.handleMessage((MessageBuilder.withPayload(messageToSend).copyHeaders(transformed).build()));
+				}
 			}
 		}
 
@@ -319,15 +339,23 @@ public class RedisMessageChannelBinder extends AbstractBinder<MessageChannel, Co
 
 	private class ReceivingHandler extends AbstractReplyProducingMessageHandler {
 
-		public ReceivingHandler() {
+		private final ConsumerProperties consumerProperties;
+
+		public ReceivingHandler(ConsumerProperties consumerProperties) {
 			super();
+			this.consumerProperties = consumerProperties;
 			this.setBeanFactory(RedisMessageChannelBinder.this.getBeanFactory());
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		protected Object handleRequestMessage(Message<?> requestMessage) {
-			return extractMessageValues(requestMessage).toMessage(getMessageBuilderFactory());
+			if (HeaderMode.embeddedHeaders.equals(consumerProperties.getHeaderMode())) {
+				return extractMessageValues(requestMessage).toMessage(getMessageBuilderFactory());
+			}
+			else {
+				return requestMessage;
+			}
 		}
 
 		@Override
