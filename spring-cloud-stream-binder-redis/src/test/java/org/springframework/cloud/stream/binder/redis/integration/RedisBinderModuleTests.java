@@ -95,7 +95,7 @@ public class RedisBinderModuleTests {
 
 	@Test
 	public void testParentConnectionFactoryInheritedIfOverridden() {
-		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run();
+		context = new SpringApplication(SimpleProcessor.class, ConnectionFactoryConfiguration.class).run("--server.port=0");
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
 		assertThat(binder, instanceOf(RedisMessageChannelBinder.class));
@@ -123,6 +123,7 @@ public class RedisBinderModuleTests {
 		params.add("--spring.cloud.stream.output.binder=custom");
 		params.add("--spring.cloud.stream.binders.custom.type=redis");
 		params.add("--spring.cloud.stream.binders.custom.environment.foo=bar");
+		params.add("--server.port=0");
 		context = SpringApplication.run(SimpleProcessor.class, params.toArray(new String[]{}));
 		BinderFactory<?> binderFactory = context.getBean(BinderFactory.class);
 		Binder binder = binderFactory.getBinder(null);
