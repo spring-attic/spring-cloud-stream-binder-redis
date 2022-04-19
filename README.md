@@ -1,3 +1,5 @@
+# spring-cloud-stream-binder-redis is no longer actively maintained by VMware, Inc.
+
 # Spring Cloud Stream Binder Redis (deprecated)
 
 This project contains a Spring Cloud Stream Binder implementation for Redis.
